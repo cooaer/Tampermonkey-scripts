@@ -2,7 +2,7 @@
 // @name         GitHub Clone with Sourcetree
 // @name:zh-CN   GitHub 使用 Sourcetree 克隆
 // @namespace    https://github.com/cooaer/Tampermonkey-scripts
-// @version      1.3
+// @version      1.4
 // @description  Adds an "Open with Sourcetree" button to the GitHub "Code" dropdown menu, allowing you to clone repositories directly into the Sourcetree application.
 // @description:zh-CN 在 GitHub 的“Code”下拉菜单中添加一个“Open with Sourcetree”按钮，允许您直接将仓库克隆到 Sourcetree 应用程序中。
 // @author       cooaer
@@ -57,13 +57,27 @@
     }
 
     function addSourcetreeButton(desktopButton) {
-        // 1. Get the HTTPS clone URL
-        const httpsInput = document.getElementById('clone-with-https');
-        if (!httpsInput) {
-            console.log('Sourcetree Script: Could not find HTTPS clone URL input.');
+        // 1. Get the repository clone URL (prefer HTTPS, fallback to SSH)
+        function getCloneUrl() {
+            const httpsInput = document.getElementById('clone-with-https');
+            if (httpsInput && httpsInput.value) {
+                return httpsInput.value;
+            }
+
+            const sshInput = document.getElementById('clone-with-ssh');
+            if (sshInput && sshInput.value) {
+                return sshInput.value;
+            }
+
+            // We don't handle gh-cli as it's not a direct URL for Sourcetree.
+            return null;
+        }
+
+        const repoUrl = getCloneUrl();
+        if (!repoUrl) {
+            console.log('Sourcetree Script: Could not find a usable HTTPS or SSH clone URL.');
             return;
         }
-        const repoUrl = httpsInput.value;
 
         // 2. Clone the "GitHub Desktop" button's list item
         const sourcetreeListItem = desktopButton.cloneNode(true);
