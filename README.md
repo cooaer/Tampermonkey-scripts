@@ -10,7 +10,7 @@ A collection of personal Tampermonkey scripts to enhance web browsing.
 
 This script adds an "Open with Sourcetree" button to the GitHub "Code" dropdown menu, allowing you to clone repositories directly into the Sourcetree application.
 
-![Screenshot of the "Open with Sourcetree" button](httpss://user-images.githubusercontent.com/4060489/232886328-e0a38a6b-81e6-4f1a-85c8-748c2f8f53e2.png)
+![Screenshot of the "Open with Sourcetree" button](./screenshots/open-with-sourcetree.png)
 
 #### Features:
 - Adds a convenient button to the clone dialog.
