@@ -1,12 +1,19 @@
 // ==UserScript==
 // @name         GitHub Clone with Sourcetree
-// @namespace    http://tampermonkey.net/
-// @version      1.2
-// @description  Adds an "Open with Sourcetree" button with the app icon to the GitHub clone dialog.
-// @author       Gemini
-// @match        https://github.com/*/*
-// @grant        none
+// @name:zh-CN   GitHub 使用 Sourcetree 克隆
+// @namespace    https://github.com/cooaer/Tampermonkey-scripts
+// @version      1.3
+// @description  Adds an "Open with Sourcetree" button to the GitHub "Code" dropdown menu, allowing you to clone repositories directly into the Sourcetree application.
+// @description:zh-CN 在 GitHub 的“Code”下拉菜单中添加一个“Open with Sourcetree”按钮，允许您直接将仓库克隆到 Sourcetree 应用程序中。
+// @author       cooaer
+// @match        https://github.com/*
 // @icon         https://sourcetreeapp.com/favicon.ico
+// @grant        none
+// @license      MIT
+// @homepageURL  https://github.com/cooaer/Tampermonkey-scripts
+// @supportURL   https://github.com/cooaer/Tampermonkey-scripts/issues
+// @updateURL    https://github.com/cooaer/Tampermonkey-scripts/raw/master/github-clone-sourcetree.user.js
+// @downloadURL  https://github.com/cooaer/Tampermonkey-scripts/raw/master/github-clone-sourcetree.user.js
 // ==/UserScript==
 
 (function() {
