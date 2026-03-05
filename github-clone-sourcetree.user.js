@@ -2,7 +2,7 @@
 // @name         GitHub Clone with Sourcetree
 // @name:zh-CN   GitHub 使用 Sourcetree 克隆
 // @namespace    https://github.com/cooaer/Tampermonkey-scripts
-// @version      1.4
+// @version      1.5
 // @description  Adds an "Open with Sourcetree" button to the GitHub "Code" dropdown menu, allowing you to clone repositories directly into the Sourcetree application.
 // @description:zh-CN 在 GitHub 的“Code”下拉菜单中添加一个“Open with Sourcetree”按钮，允许您直接将仓库克隆到 Sourcetree 应用程序中。
 // @author       cooaer
@@ -45,67 +45,75 @@
     observer.observe(document.body, { childList: true, subtree: true });
 
     function findDesktopButton() {
-        // Find the "Open with GitHub Desktop" button based on its text content and structure
-        const actionListItems = document.querySelectorAll('.prc-ActionList-ActionListItem-uq6I7');
-        for (const item of actionListItems) {
-            const label = item.querySelector('.prc-ActionList-ItemLabel-TmBhn');
-            if (label && label.textContent.includes('Open with GitHub Desktop')) {
-                return item;
-            }
+        // Find the "Open with GitHub Desktop" button based on its protocol handler
+        const desktopLink = document.querySelector('a[href^="x-github-client://openRepo/"]');
+        if (desktopLink) {
+            // Return the closest list item or container to clone
+            return desktopLink.closest('li') || desktopLink.closest('[role="menuitem"]') || desktopLink.parentElement;
         }
         return null;
     }
 
     function addSourcetreeButton(desktopButton) {
-        // 1. Get the repository clone URL (prefer HTTPS, fallback to SSH)
+        // 1. Get the repository clone URL from the GitHub Desktop link
         function getCloneUrl() {
-            const httpsInput = document.getElementById('clone-with-https');
-            if (httpsInput && httpsInput.value) {
-                return httpsInput.value;
+            const desktopLink = desktopButton.querySelector('a[href^="x-github-client://openRepo/"]') || 
+                               (desktopButton.tagName === 'A' && desktopButton.href.startsWith('x-github-client://') ? desktopButton : null);
+            
+            if (desktopLink) {
+                const href = desktopLink.getAttribute('href');
+                return href.replace('x-github-client://openRepo/', '');
             }
+
+            // Fallback to original method
+            const httpsInput = document.getElementById('clone-with-https');
+            if (httpsInput && httpsInput.value) return httpsInput.value;
 
             const sshInput = document.getElementById('clone-with-ssh');
-            if (sshInput && sshInput.value) {
-                return sshInput.value;
-            }
+            if (sshInput && sshInput.value) return sshInput.value;
 
-            // We don't handle gh-cli as it's not a direct URL for Sourcetree.
             return null;
         }
 
         const repoUrl = getCloneUrl();
         if (!repoUrl) {
-            console.log('Sourcetree Script: Could not find a usable HTTPS or SSH clone URL.');
             return;
         }
 
-        // 2. Clone the "GitHub Desktop" button's list item
+        // 2. Clone the "GitHub Desktop" button's container
         const sourcetreeListItem = desktopButton.cloneNode(true);
+        sourcetreeListItem.id = ''; // Remove cloned ID if any
 
         // 3. Modify the cloned item for Sourcetree
-        const sourcetreeButton = sourcetreeListItem.querySelector('button, a');
-        if (!sourcetreeButton) return;
+        const sourcetreeAnchor = sourcetreeListItem.querySelector('a') || (sourcetreeListItem.tagName === 'A' ? sourcetreeListItem : null);
+        if (!sourcetreeAnchor) return;
 
-        // Replace the button with an anchor tag to make it a clickable link
-        const sourcetreeAnchor = document.createElement('a');
         sourcetreeAnchor.href = `sourcetree://cloneRepo/${repoUrl}`;
-        sourcetreeAnchor.className = sourcetreeButton.className;
-        sourcetreeAnchor.innerHTML = sourcetreeButton.innerHTML;
         sourcetreeAnchor.id = sourcetreeButtonId;
-
-        // Replace the original button inside the cloned list item with our new anchor
-        sourcetreeListItem.replaceChild(sourcetreeAnchor, sourcetreeListItem.firstElementChild);
+        
+        // Remove any data attributes that might trigger GitHub's own analytics or behavior
+        for (const attr of sourcetreeAnchor.attributes) {
+            if (attr.name.startsWith('data-')) {
+                sourcetreeAnchor.removeAttribute(attr.name);
+            }
+        }
 
         // 4. Update the icon
-        const iconContainer = sourcetreeAnchor.querySelector('.prc-ActionList-LeadingVisual-dxXxW');
+        // Look for the SVG or a container that looks like an icon holder
+        const iconContainer = sourcetreeAnchor.querySelector('svg')?.parentElement;
         if (iconContainer) {
             iconContainer.innerHTML = sourcetreeIconSvg;
         }
 
         // 5. Update the label text
-        const label = sourcetreeAnchor.querySelector('.prc-ActionList-ItemLabel-TmBhn');
-        if (label) {
-            label.textContent = 'Open with Sourcetree';
+        // Search for the element containing the text "Open with GitHub Desktop"
+        const walker = document.createTreeWalker(sourcetreeAnchor, NodeFilter.SHOW_TEXT, null, false);
+        let node;
+        while (node = walker.nextNode()) {
+            if (node.textContent.includes('Open with GitHub Desktop')) {
+                node.textContent = 'Open with Sourcetree';
+                break;
+            }
         }
 
         // 6. Insert the new button after the GitHub Desktop button
